@@ -62,23 +62,41 @@ jobs:
           distribution: adopt
           java-version: 17
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Create debug keystore
+      - name: Accept Android licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
+
+      - name: Install Android SDK components
         run: |
-          keytool -genkey -v -keystore android/app/debug.keystore \
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            --sdk_root=$ANDROID_HOME >/dev/null 2>&1 || true
+
+      - name: Generate Gradle wrapper
+        working-directory: android
+        run: gradle wrapper --gradle-version 8.11.1
+
+      - name: Create debug keystore
+        working-directory: android/app
+        run: |
+          keytool -genkey -v -keystore debug.keystore \
             -alias androiddebugkey -storepass android -keypass android \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,OU=,O=,L=,S=,C="
 
       - name: Build Android APK (debug)
-        run: |
-          cd android
-          ./gradlew assembleDebug --no-daemon
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: hifz-app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
