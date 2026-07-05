@@ -37,17 +37,14 @@ jobs:
         with:
           distribution: adopt
           java-version: 17
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
       - name: Accept licenses & install platform
         run: |
-          yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses >/dev/null 2>&1 || true
-          yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0" >/dev/null 2>&1 || true
-      - name: Generate Gradle wrapper
-        working-directory: android
-        run: gradle wrapper --gradle-version 8.11.1
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0" >/dev/null 2>&1 || true
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
       - name: Create debug keystore
         working-directory: android/app
         run: |
