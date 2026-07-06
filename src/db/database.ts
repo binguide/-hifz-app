@@ -19,7 +19,39 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (db) return db;
   db = await SQLite.openDatabase({name: 'hifz.db', location: 'default'});
   await db.executeSql(CREATE_TABLES);
+  await seedDemoData(db);
   return db;
+}
+
+async function seedDemoData(d: SQLite.SQLiteDatabase) {
+  const demoUsers = [
+    ['demo-admin', 'Demo Admin', '1000', 'admin', '123456'],
+    ['demo-teacher', 'Demo Teacher', '2000', 'teacher', '123456'],
+    ['demo-student', 'Demo Student', '3000', 'student', '123456'],
+    ['demo-parent', 'Demo Parent', '4000', 'parent', '123456'],
+  ];
+
+  for (const user of demoUsers) {
+    await d.executeSql(
+      `INSERT OR IGNORE INTO users (id, name, phone, role, password_hash)
+       VALUES (?, ?, ?, ?, ?)`,
+      user,
+    );
+  }
+
+  await d.executeSql(
+    `INSERT OR IGNORE INTO circles (id, name, teacher_id, schedule, max_students)
+     VALUES (?, ?, ?, ?, ?)`,
+    ['demo-circle', 'Demo Circle', 'demo-teacher', '{}', 20],
+  );
+  await d.executeSql(
+    'INSERT OR IGNORE INTO circle_students (id, circle_id, student_id) VALUES (?, ?, ?)',
+    ['demo-circle-student', 'demo-circle', 'demo-student'],
+  );
+  await d.executeSql(
+    'INSERT OR IGNORE INTO parent_students (id, parent_id, student_id) VALUES (?, ?, ?)',
+    ['demo-parent-student', 'demo-parent', 'demo-student'],
+  );
 }
 
 export async function closeDatabase() {
