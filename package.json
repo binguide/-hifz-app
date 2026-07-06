@@ -7,7 +7,8 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "lint": "eslint .",
-    "test": "jest"
+    "test": "jest",
+    "postinstall": "node -e \"var fs=require('fs');var p='node_modules/react-native-sqlite-storage/platforms/android/build.gradle';var c=fs.readFileSync(p,'utf8');fs.writeFileSync(p,c.replace('jcenter()','mavenCentral()'))\""
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.1.0",

@@ -35,11 +35,14 @@ jobs:
           java-version: 17
       - name: Install dependencies
         run: npm install
+      - name: Patch react-native-sqlite-storage (jcenter -> mavenCentral)
+        run: |
+          sed -i 's/jcenter()/mavenCentral()/g' node_modules/react-native-sqlite-storage/platforms/android/build.gradle
       - name: Build Android APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1
+          ./gradlew assembleDebug --no-daemon --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
