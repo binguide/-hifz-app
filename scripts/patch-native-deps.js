@@ -41,45 +41,67 @@ function patchFabricFile(filePath) {
   var c = fs.readFileSync(filePath, 'utf8');
   var idx = c.indexOf('CodegenTypes as CT');
   if (idx === -1) {
-    console.log('No CT import (skipping): ' + filePath);
     return;
   }
 
-  // Find the complete import statement line
-  var lineStart = c.lastIndexOf('\n', idx) + 1;
-  var lineEnd = c.indexOf('\n', idx);
-  if (lineEnd === -1) lineEnd = c.length;
-  var line = c.substring(lineStart, lineEnd);
-
-  // Parse the import: extract everything destructured besides "CodegenTypes as CT"
-  var match = line.match(/import\s+type\s+\{\s*([^}]+)\}\s+from\s+['"]react-native['"];?/);
-  if (!match) {
-    console.log('Cannot parse import in: ' + filePath);
+  // Find the start of the import statement
+  // Go back from idx to find the 'import' keyword
+  var lineStart = c.lastIndexOf('import', idx);
+  if (lineStart === -1 || c.substring(lineStart, lineStart + 6) !== 'import') {
+    console.log('Cannot find import start in: ' + filePath);
     return;
   }
 
-  var destructured = match[1].split(',').map(function (s) { return s.trim(); }).filter(function (s) { return s; });
-  var otherImports = destructured.filter(function (s) { return s.indexOf('CodegenTypes as CT') === -1; });
-  var hasViewProps = otherImports.some(function (s) { return s.indexOf('ViewProps') !== -1; });
+  // Find the end of the import (semicolon)
+  var lineEnd = c.indexOf(';', lineStart);
+  if (lineEnd === -1) {
+    console.log('Cannot find semicolon in: ' + filePath);
+    return;
+  }
+  lineEnd += 1; // include semicolon
 
-  // Build the two replacement imports
-  var ctImport = "import type { WithDefault, Int32, Float, DirectEventHandler } from 'react-native/Libraries/Types/CodegenTypes';";
-  var reactNativeImport = otherImports.length > 0 ? "import type { " + otherImports.join(', ') + " } from 'react-native';" : '';
+  var importStatement = c.substring(lineStart, lineEnd);
 
-  // Replace the import line
-  var newLines = ctImport + '\n' + (reactNativeImport ? reactNativeImport + '\n' : '');
+  // Now parse the import statement
+  // It is in the form: import type { ... } from 'react-native';
+  // Extract the content between { and }
+  var braceStart = importStatement.indexOf('{');
+  var braceEnd = importStatement.indexOf('}');
+  if (braceStart === -1 || braceEnd === -1) {
+    console.log('Cannot parse braces in: ' + filePath);
+    return;
+  }
 
-  // For indentation, match the original
-  var indent = line.match(/^\s*/)[0];
-  newLines = newLines.split('\n').map(function (l) { return l ? indent + l : l; }).join('\n');
+  var destructured = importStatement.substring(braceStart + 1, braceEnd);
+  var items = destructured.split(',').map(function (s) { return s.trim(); }).filter(function (s) { return s; });
 
-  c = c.substring(0, lineStart) + newLines + c.substring(lineEnd + 1);
+  // Split into CT-related and other imports
+  var ctItems = [];
+  var otherItems = [];
+  items.forEach(function (item) {
+    if (item.indexOf('CodegenTypes as CT') !== -1) {
+      // This is the namespace import - the CT types are all accounted for
+      ctItems.push('WithDefault', 'Int32', 'Float', 'DirectEventHandler');
+    } else {
+      otherItems.push(item);
+    }
+  });
+
+  // Deduplicate ctItems
+  ctItems = ctItems.filter(function (v, i, a) { return a.indexOf(v) === i; });
+
+  // Build the replacement
+  var indent = importStatement.match(/^\s*/m)[0];
+  var newLines = '';
+  newLines += indent + "import type { " + ctItems.join(', ') + " } from 'react-native/Libraries/Types/CodegenTypes';\n";
+  if (otherItems.length > 0) {
+    newLines += indent + "import type { " + otherItems.join(', ') + " } from 'react-native';\n";
+  }
+
+  c = c.substring(0, lineStart) + newLines + c.substring(lineEnd);
 
   // Replace CT.XXX with XXX
   c = c.replace(/CT\./g, '');
-
-  // Also replace 'react-native' import for codegenNativeComponent if it exists
-  // No need, codegenNativeComponent is from 'react-native' and that import is separate
 
   fs.writeFileSync(filePath, c);
   console.log('Patched: ' + filePath);
