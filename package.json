@@ -8,7 +8,7 @@
     "start": "react-native start",
     "lint": "eslint .",
     "test": "jest",
-    "postinstall": "node -e \"var fs=require('fs');['platforms/android/build.gradle','platforms/android-native/build.gradle'].forEach(function(p){var f='node_modules/react-native-sqlite-storage/'+p;if(fs.existsSync(f)){fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(/jcenter\\(\\)/g,'mavenCentral()'))}})\""
+    "postinstall": "node -e \"var fs=require('fs');['platforms/android/build.gradle','platforms/android-native/build.gradle'].forEach(function(p){var f='node_modules/react-native-sqlite-storage/'+p;if(fs.existsSync(f)){fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(/jcenter\\(\\)/g,'mavenCentral()').replace(/classpath 'com\\.android\\.tools\\.build:gradle:3\\.1\\.4'\\n/g,''))}})\""
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.1.0",

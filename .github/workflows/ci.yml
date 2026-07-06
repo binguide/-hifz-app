@@ -35,10 +35,13 @@ jobs:
           java-version: 17
       - name: Install dependencies
         run: npm install
-      - name: Patch react-native-sqlite-storage (jcenter -> mavenCentral)
+      - name: Patch react-native-sqlite-storage for Gradle 9 compat
         run: |
-          sed -i 's/jcenter()/mavenCentral()/g' node_modules/react-native-sqlite-storage/platforms/android/build.gradle
-          sed -i 's/jcenter()/mavenCentral()/g' node_modules/react-native-sqlite-storage/platforms/android-native/build.gradle
+          for f in platforms/android/build.gradle platforms/android-native/build.gradle; do
+            file="node_modules/react-native-sqlite-storage/$f"
+            sed -i 's/jcenter()/mavenCentral()/g' "$file"
+            sed -i "/classpath 'com.android.tools.build:gradle:3.1.4'/d" "$file"
+          done
       - name: Build Android APK
         working-directory: android
         run: |
