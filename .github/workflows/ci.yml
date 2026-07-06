@@ -38,6 +38,7 @@ jobs:
       - name: Patch react-native-sqlite-storage (jcenter -> mavenCentral)
         run: |
           sed -i 's/jcenter()/mavenCentral()/g' node_modules/react-native-sqlite-storage/platforms/android/build.gradle
+          sed -i 's/jcenter()/mavenCentral()/g' node_modules/react-native-sqlite-storage/platforms/android-native/build.gradle
       - name: Build Android APK
         working-directory: android
         run: |
