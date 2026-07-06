@@ -2,7 +2,7 @@ import {create} from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {User, UserRole} from '../types';
 import {getUserByPhone, addUser} from '../db/database';
-import {generateId} from '../utils/helpers';
+import {generateId, normalizeDigits} from '../utils/helpers';
 
 interface AuthState {
   user: User | null;
@@ -21,19 +21,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: true,
 
   login: async (phone: string, password: string) => {
-    const user = await getUserByPhone(phone);
+    const normalizedPhone = normalizeDigits(phone.trim());
+    const normalizedPassword = normalizeDigits(password.trim());
+    const user = await getUserByPhone(normalizedPhone);
     if (!user) return false;
-    if (user.password_hash !== password) return false;
+    if (user.password_hash !== normalizedPassword) return false;
     await AsyncStorage.setItem('userId', user.id);
     set({user, isLoggedIn: true});
     return true;
   },
 
   register: async (name: string, phone: string, password: string, role: UserRole) => {
-    const existing = await getUserByPhone(phone);
+    const normalizedPhone = normalizeDigits(phone.trim());
+    const normalizedPassword = normalizeDigits(password.trim());
+    const existing = await getUserByPhone(normalizedPhone);
     if (existing) return false;
     const id = generateId();
-    const user = {id, name, phone, role, password_hash: password};
+    const user = {id, name, phone: normalizedPhone, role, password_hash: normalizedPassword};
     await addUser(user);
     await AsyncStorage.setItem('userId', id);
     set({user: user as User, isLoggedIn: true});

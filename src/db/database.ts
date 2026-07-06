@@ -18,9 +18,20 @@ let db: SQLite.SQLiteDatabase | null = null;
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (db) return db;
   db = await SQLite.openDatabase({name: 'hifz.db', location: 'default'});
-  await db.executeSql(CREATE_TABLES);
+  await applySchema(db);
   await seedDemoData(db);
   return db;
+}
+
+async function applySchema(d: SQLite.SQLiteDatabase) {
+  const statements = CREATE_TABLES
+    .split(';')
+    .map(statement => statement.trim())
+    .filter(Boolean);
+
+  for (const statement of statements) {
+    await d.executeSql(statement);
+  }
 }
 
 async function seedDemoData(d: SQLite.SQLiteDatabase) {
