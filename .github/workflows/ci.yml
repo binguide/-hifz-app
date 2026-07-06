@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [main, master, develop]
   pull_request:
@@ -17,7 +18,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       - name: TypeScript check
         run: npx tsc --noEmit
 
@@ -29,22 +30,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
       - name: Install dependencies
-        run: npm install
-      - name: Patch native deps for RN 0.86 / Gradle 9 compat
-        run: node scripts/patch-native-deps.js
+        run: npm ci
       - name: Build Android APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: hifz-app-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: hifz-app-release
+          path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
